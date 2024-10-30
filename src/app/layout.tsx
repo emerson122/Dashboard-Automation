@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: "Automation",
@@ -16,12 +17,10 @@ export default function RootLayout({
     <html lang="es">
       <head>
         {/* CDN para Recharts */}
-     
-      
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-        {/* CDN para React */}
-
+        <Script
+          src="https://cdn.jsdelivr.net/npm/chart.js"
+          strategy="lazyOnload" // O "afterInteractive" si prefieres que se cargue después de que la página esté interactiva
+        />
       </head>
       <body>{children}</body>
     </html>
