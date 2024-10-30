@@ -8,16 +8,13 @@ import { AlertCircle, Activity, Power, Thermometer } from 'lucide-react';
 Chart.register(CategoryScale, LinearScale, LineController, LineElement, PointElement);
 
 const Dashboard = () => {
-  const [data] = useState([
-    { time: '00:00', temperature: 24, energy: 85, status: 'normal' },
-    // ... demás datos iniciales ...
-  ]);
+  const [data, setData] = useState({ temperature: 24, energy: 85, status: 'normal' });
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
 
   useEffect(() => {
     const ctx = chartRef.current.getContext('2d');
-    
+
     // Inicializa el gráfico si aún no existe
     if (!chartInstance.current) {
       chartInstance.current = new Chart(ctx, {
@@ -46,7 +43,7 @@ const Dashboard = () => {
         options: {
           scales: {
             x: {
-              type: 'category',  // Usa 'category' ya que está registrada
+              type: 'category',
               ticks: { color: '#9CA3AF' },
               grid: { color: '#374151' }
             },
@@ -75,7 +72,18 @@ const Dashboard = () => {
       chartInstance.current.update();
     };
 
-    const interval = setInterval(addData, 1000);
+    const updateData = () => {
+      const newTemp = Math.floor(Math.random() * 100);
+      const newEnergy = Math.floor(Math.random() * 100);
+      const newStatus = newTemp > 90 || newEnergy > 90 ? 'warning' : 'normal';
+
+      setData({ temperature: newTemp, energy: newEnergy, status: newStatus });
+    };
+
+    const interval = setInterval(() => {
+      addData();
+      updateData();
+    }, 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -96,7 +104,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400">Temperatura</p>
-                <h3 className="text-2xl font-bold">{data[data.length - 1].temperature}°C</h3>
+                <h3 className="text-2xl font-bold">{data.temperature}°C</h3>
               </div>
               <Thermometer className="text-blue-400" size={24} />
             </div>
@@ -106,7 +114,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400">Consumo Energético</p>
-                <h3 className="text-2xl font-bold">{data[data.length - 1].energy}%</h3>
+                <h3 className="text-2xl font-bold">{data.energy}%</h3>
               </div>
               <Power className="text-yellow-400" size={24} />
             </div>
@@ -116,15 +124,16 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400">Estado del Sistema</p>
-                <h3 className="text-2xl font-bold">Normal</h3>
+                <h3 className="text-2xl font-bold">{data.status === 'warning' ? 'Advertencia' : 'Normal'}</h3>
               </div>
-              <AlertCircle className="text-green-400" size={24} />
+              <AlertCircle className={data.status === 'warning' ? 'text-red-400' : 'text-green-400'} size={24} />
             </div>
           </div>
         </div>
+        
         <div className="bg-gray-800 p-4 rounded-lg w-full">
           <h3 className="text-lg font-semibold mb-4">Monitoreo en Tiempo Real</h3>
-          <div className="w-full h-82"> {/* Cambiado a w-full y h-72 para ocupar todo el ancho */}
+          <div className="w-full h-82">
             <canvas ref={chartRef} id="realtimeChart" className="w-full h-full"></canvas>
           </div>
         </div>
