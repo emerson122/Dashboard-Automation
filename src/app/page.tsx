@@ -1,75 +1,111 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Chart, CategoryScale, LinearScale, LineController, LineElement, PointElement } from 'chart.js';
+import { Chart, CategoryScale, LinearScale, LineController, LineElement, PointElement, ChartData, ChartOptions } from 'chart.js';
 import { AlertCircle, Activity, Power, Thermometer } from 'lucide-react';
 
 // Registrar las escalas y elementos necesarios
 Chart.register(CategoryScale, LinearScale, LineController, LineElement, PointElement);
 
+// Definir interfaces para los tipos
+interface DashboardData {
+  temperature: number;
+  energy: number;
+  status: 'normal' | 'warning';
+}
+
 const Dashboard = () => {
-  const [data, setData] = useState({ temperature: 24, energy: 85, status: 'normal' });
-  const chartRef = useRef(null);
-  const chartInstance = useRef(null);
+  const [data, setData] = useState<DashboardData>({ 
+    temperature: 24, 
+    energy: 85, 
+    status: 'normal' 
+  });
+  
+  const chartRef = useRef<HTMLCanvasElement | null>(null);
+  const chartInstance = useRef<Chart | null>(null);
 
   useEffect(() => {
-    const ctx = chartRef.current.getContext('2d');
+    if (!chartRef.current) return;
 
-    // Inicializa el gráfico si aún no existe
-    if (!chartInstance.current) {
-      chartInstance.current = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: Array.from({ length: 10 }, (_, i) => `T-${i}`),
-          datasets: [
-            {
-              label: 'Temperatura',
-              data: Array(10).fill(0),
-              borderColor: '#60A5FA',
-              borderWidth: 2,
-              fill: false,
-              tension: 0.1
-            },
-            {
-              label: 'Energía',
-              data: Array(10).fill(0),
-              borderColor: '#FBBF24',
-              borderWidth: 2,
-              fill: false,
-              tension: 0.1
-            }
-          ]
+    const ctx = chartRef.current.getContext('2d');
+    if (!ctx) return;
+
+    // Configuración inicial del gráfico
+    const chartData: ChartData = {
+      labels: Array.from({ length: 10 }, (_, i) => `T-${i}`),
+      datasets: [
+        {
+          label: 'Temperatura',
+          data: Array(10).fill(0),
+          borderColor: '#60A5FA',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.1
         },
-        options: {
-          scales: {
-            x: {
-              type: 'category',
-              ticks: { color: '#9CA3AF' },
-              grid: { color: '#374151' }
-            },
-            y: {
-              beginAtZero: true,
-              ticks: { color: '#9CA3AF' },
-              grid: { color: '#374151' }
-            }
-          },
-          plugins: {
-            legend: { labels: { color: '#E5E7EB' } }
-          }
+        {
+          label: 'Energía',
+          data: Array(10).fill(0),
+          borderColor: '#FBBF24',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.1
         }
-      });
+      ]
+    };
+
+    const chartOptions: ChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          type: 'category',
+          ticks: { color: '#9CA3AF' },
+          grid: { color: '#374151' }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: '#9CA3AF' },
+          grid: { color: '#374151' }
+        }
+      },
+      plugins: {
+        legend: { 
+          labels: { color: '#E5E7EB' },
+          display: true
+        }
+      }
+    };
+
+    // Destruir el gráfico existente si hay uno
+    if (chartInstance.current) {
+      chartInstance.current.destroy();
     }
 
+    // Crear nuevo gráfico
+    chartInstance.current = new Chart(ctx, {
+      type: 'line',
+      data: chartData,
+      options: chartOptions
+    });
+
+    // Función para actualizar datos
     const addData = () => {
+      if (!chartInstance.current) return;
+
       const newTemp = Math.floor(Math.random() * 100);
       const newEnergy = Math.floor(Math.random() * 100);
       
-      chartInstance.current.data.datasets[0].data.push(newTemp);
-      chartInstance.current.data.datasets[1].data.push(newEnergy);
-      chartInstance.current.data.datasets[0].data.shift();
-      chartInstance.current.data.datasets[1].data.shift();
+      const tempData = chartInstance.current.data.datasets[0].data;
+      const energyData = chartInstance.current.data.datasets[1].data;
       
-      chartInstance.current.update();
+      if (Array.isArray(tempData) && Array.isArray(energyData)) {
+        tempData.push(newTemp);
+        energyData.push(newEnergy);
+        tempData.shift();
+        energyData.shift();
+        
+        chartInstance.current.update();
+      }
     };
 
     const updateData = () => {
@@ -85,7 +121,12 @@ const Dashboard = () => {
       updateData();
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+      }
+    };
   }, []);
 
   return (
@@ -133,11 +174,10 @@ const Dashboard = () => {
         
         <div className="bg-gray-800 p-4 rounded-lg w-full">
           <h3 className="text-lg font-semibold mb-4">Monitoreo en Tiempo Real</h3>
-          <div className="w-full h-82">
-            <canvas ref={chartRef} id="realtimeChart" className="w-full h-full"></canvas>
+          <div className="w-full h-[400px]">
+            <canvas ref={chartRef} className="w-full h-full"></canvas>
           </div>
         </div>
-
       </div>
     </div>
   );
