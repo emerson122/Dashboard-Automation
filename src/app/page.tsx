@@ -8,7 +8,7 @@ import { AlertCircle, Activity, Power, Thermometer } from 'lucide-react';
 Chart.register(CategoryScale, LinearScale, LineController, LineElement, PointElement);
 
 const Dashboard = () => {
-  const [data, setData] = useState([
+  const [data] = useState([
     { time: '00:00', temperature: 24, energy: 85, status: 'normal' },
     // ... demás datos iniciales ...
   ]);
